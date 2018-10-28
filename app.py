@@ -1,9 +1,67 @@
 #!/usr/bin/env python
 from datetime import datetime
 import csv
+import json
 import os
 
 from canvasapi import Canvas
+from flask import Flask, jsonify, request, send_from_directory
+
+app = Flask(__name__, static_url_path='/static')
+
+settings = {
+    'course_names': {},
+    'within_days': 3
+}
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings_endpoint():
+    if request.method == 'POST':
+        global settings
+        settings = json.loads(request.data)
+    return jsonify(settings)
+
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        print(request.data)
+        return jsonify(get_alexa_deadline())
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
+        # return jsonify(get_alexa_feed())
+
+def get_alexa_deadline():
+    sentences = ['']
+    for deadline in get_deadlines(include_submitted=False, within_days=settings['within_days']):
+        sentences.append('<p>{} from {} is due in {}.</p>'.format(
+            deadline['assignment_name'],
+            settings['course_names'][deadline['course_code']],
+            deadline['deadline']))
+
+    return {
+        'version': '1.0',
+        'response': {
+            'outputSpeech': {
+                'type': 'SSML',
+                'ssml': '<speak>' + '\n'.join(sentences) + '\n</speak>\n'
+            },
+        }
+    }
+
+def get_alexa_feed():
+    feed = []
+    now_utc = datetime.utcnow()
+    deadlines = list(get_deadlines(include_submitted=False, within_days=3))
+    for i, deadline in enumerate(deadlines):
+        # update_date = (now_utc - datetime(second=len(deadlines) - i))
+        feed.append({
+            'uid': i,
+            'updateDate': deadline['due_at'].strftime('%Y-%m-%dT%H:%M:%S.0Z'),
+            'titleText': '{} from {}'.format(deadline['assignment_name'], deadline['course_code']),
+            'mainText': deadline['deadline'] + ' ' + str(i)
+        })
+    return feed
 
 def parse_assignment(assignment):
     return {
@@ -34,6 +92,7 @@ courses = {}     # course_id to course
 assignments = {} # assignment_id to assignemnt
 
 for course in canvas.get_courses():
+    settings['course_names'][course.course_code] = course.course_code
     courses[course.id] = course
     cta[course.id] = [parse_assignment(a) for a in course.get_assignments(include=['submission'])]
     for assignemnts_list in cta.values():
@@ -55,20 +114,27 @@ def get_deadline(now, due_at):
         result.append('{:d} {}'.format(hours, 'hour' if hours == 1 else 'hours'))
     result.append('{:d} {}'.format(minutes, 'minute' if minutes == 1 else 'minutes'))
     # result.append('{:d} {}'.format(seconds, 'second' if seconds == 1 else 'seconds'))
-    return ' '.join(result)
+    return ' and '.join(result)
 
-def get_deadlines():
+def get_deadlines(include_submitted=True, within_days=None):
     now = datetime.now()
     upcoming_assignments = [a for a in assignments.values() if a['due_at'] is None or a['due_at'] > now]
+    if within_days:
+        upcoming_assignments = [a for a in upcoming_assignments if a['due_at'] and (a['due_at'] - now).days < within_days]
+
     for assignment in sorted(upcoming_assignments, key=lambda a: (a['due_at'] is None, a['due_at'])):
         aname = assignment['name']
-        yield {
+        deadline = {
+            'course_name': courses[assignment['course_id']].name,
             'course_code': courses[assignment['course_id']].course_code,
             'assignment_name': assignment['name'],
             'due_at': assignment['due_at'],
             'deadline': get_deadline(now, assignment['due_at']),
-            'has_submitted': True if assignment['submission']['workflow_state'] != 'unsubmitted' else False
         }
+        if include_submitted:
+            deadline['has_submitted'] = True if assignment['submission']['workflow_state'] != 'unsubmitted' else False
+
+        yield deadline
 
 def stress_check():
     pass
@@ -116,4 +182,4 @@ def write_deadline_report():
         writer.writerows(get_deadlines())
 
 # current_grade(ctag, 10266)
-print_upcoming_assignments()
+# print_upcoming_assignments()
