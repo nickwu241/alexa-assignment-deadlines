@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Settings</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+</head>
+
+<body>
+    <div id="app" class="container mt-5">
+        <div v-if="message" class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @click="close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <button class="mb-2 btn btn-lg btn-primary" @click="toggle">Show/Hide Deadlines</button>
+        <div class="mb-2" v-if="show" v-for="d in deadlines">
+            <strong>{{ d['assignment_name'] }}</strong> from <strong>{{ d['course_code'] }}</strong> is due in <strong>{{ d['deadline']}}</strong>
+        </div>
+        <form>
+            <h3>Course Nicknames</h3>
+            <div class="form-group" v-for="(nickname, cname) in settings['course_names']">
+                {{ cname }}
+                <input class="form-control" v-model="settings['course_names'][cname]">
+            </div>
+        </form>
+        <h3>Deadlines</h3>
+        <form class="form-inline mb-2">
+            Only show deadlines within<pre> </pre>
+            <input class="form-control" v-model="settings['within_days']" style="width: 60px;">
+            <pre> </pre>days
+        </form>
+        <button class="btn btn-lg btn-primary" @click="save">Save Settings</button>
+    </div>
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                message: '',
+                settings: {
+                    course_names: {},
+                    within_days: 0
+                },
+                show: false,
+                deadlines: []
+            },
+            methods: {
+                save: function () {
+                    fetch('/settings', {
+                        method: 'POST',
+                        body: JSON.stringify(this.settings)
+                    }).then(res => res.json()).then(res => {
+                        this.message = 'Saved'
+                    })
+                },
+                close: function() {
+                    this.message = ''
+                },
+                toggle: function() {
+                    fetch('/deadlines').then(res => res.json()).then(res => {
+                        this.deadlines = res
+                        console.log(this.deadlines)
+                    })
+                    this.show = !this.show
+                }
+            },
+            mounted: function () {
+                fetch('/settings').then(res => res.json()).then(res => {
+                    Vue.set(app.settings, 'course_names', res['course_names'])
+                    Vue.set(app.settings, 'within_days', res['within_days'])
+                })
+                fetch('/deadlines').then(res => res.json()).then(res => {
+                    this.deadlines = res
+                    console.log(this.deadlines)
+                })
+            }
+        })
+    </script>
+</body>
+
+</html>

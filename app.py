@@ -22,6 +22,11 @@ def settings_endpoint():
     return jsonify(settings)
 
 
+@app.route('/deadlines')
+def deadline_endpoint():
+    return jsonify(list(get_deadlines(include_submitted=False, within_days=int(settings['within_days']))))
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
