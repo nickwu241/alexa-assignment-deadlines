@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Settings</title>
+
+    <title>Deadlines</title>
+
+    <!-- Bootstrap 4 -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
         crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
@@ -14,7 +17,13 @@
         crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
+
+    <!-- Vue -->
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+    <!-- Vuetable 2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.16.1/axios.min.js"></script>
+    <script src="https://unpkg.com/vuetable-2@1.6.0"></script>
 </head>
 
 <body>
@@ -25,10 +34,8 @@
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
-        <button class="mb-2 btn btn-lg btn-primary" @click="toggle">Show/Hide Deadlines</button>
-        <div class="mb-2" v-if="show" v-for="d in deadlines">
-            <strong>{{ d['assignment_name'] }}</strong> from <strong>{{ d['course_code'] }}</strong> is due in <strong>{{ d['deadline']}}</strong>
-        </div>
+        <button class="mb-2 btn btn-primary" @click="toggle">Show/Hide Deadlines</button>
+        <vuetable v-if="show" ref="vuetable" api-url="/deadlines" :fields="columns" pagination-path=""></vuetable>
         <form>
             <h3>Course Nicknames</h3>
             <div class="form-group" v-for="(nickname, cname) in settings['course_names']">
@@ -38,14 +45,24 @@
         </form>
         <h3>Deadlines</h3>
         <form class="form-inline mb-2">
-            Only show deadlines within<pre> </pre>
+            Only show deadlines within
+            <pre> </pre>
             <input class="form-control" v-model="settings['within_days']" style="width: 60px;">
             <pre> </pre>days
         </form>
-        <button class="btn btn-lg btn-primary" @click="save">Save Settings</button>
+        <button class="btn btn-primary" @click="save">Save Settings</button>
     </div>
 
     <script>
+        Vue.use(Vuetable)
+
+        let columns = [
+            {name: 'due_in', title: 'Due In'},
+            {name: 'assignment_name', title: 'Assignment'},
+            {name: 'course_code', title: 'Course'},
+            {name: 'due_at', title: 'Due Date'},
+            {name: 'has_submitted', title: 'Submitted'}
+        ]
         var app = new Vue({
             el: '#app',
             data: {
@@ -54,8 +71,7 @@
                     course_names: {},
                     within_days: 0
                 },
-                show: false,
-                deadlines: []
+                show: true
             },
             methods: {
                 save: function () {
@@ -66,14 +82,10 @@
                         this.message = 'Saved'
                     })
                 },
-                close: function() {
+                close: function () {
                     this.message = ''
                 },
-                toggle: function() {
-                    fetch('/deadlines').then(res => res.json()).then(res => {
-                        this.deadlines = res
-                        console.log(this.deadlines)
-                    })
+                toggle: function () {
                     this.show = !this.show
                 }
             },
@@ -81,10 +93,6 @@
                 fetch('/settings').then(res => res.json()).then(res => {
                     Vue.set(app.settings, 'course_names', res['course_names'])
                     Vue.set(app.settings, 'within_days', res['within_days'])
-                })
-                fetch('/deadlines').then(res => res.json()).then(res => {
-                    this.deadlines = res
-                    console.log(this.deadlines)
                 })
             }
         })
