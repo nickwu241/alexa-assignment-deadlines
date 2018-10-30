@@ -34,7 +34,7 @@ def index():
 
 def get_alexa_deadlines():
     sentences = []
-    for deadline in get_deadlines(include_submitted=False, within_days=models.settings['within_days']):
+    for deadline in models.get_deadlines(include_submitted=False, within_days=int(models.settings['within_days'])):
         sentences.append('<p>{} from {} is due in {}.</p>'.format(
             deadline['assignment_name'],
             models.settings['course_names'][deadline['course_code']],

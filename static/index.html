@@ -50,7 +50,7 @@
             <input class="form-control" v-model="settings['within_days']" style="width: 60px;">
             <pre> </pre>days
         </form>
-        <button class="btn btn-primary" @click="save">Save Settings</button>
+        <button class="btn btn-primary mb-2" @click="save">Save Settings</button>
     </div>
 
     <script>
@@ -59,9 +59,9 @@
         let columns = [
             {name: 'due_in', title: 'Due In'},
             {name: 'assignment_name', title: 'Assignment'},
-            {name: 'course_code', title: 'Course'},
+            {name: 'course_nickname', title: 'Course'},
             {name: 'due_at', title: 'Due Date'},
-            {name: 'has_submitted', title: 'Submitted'}
+            // {name: 'has_submitted', title: 'Submitted'}
         ]
         var app = new Vue({
             el: '#app',

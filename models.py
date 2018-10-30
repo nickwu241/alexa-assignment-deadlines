@@ -49,10 +49,11 @@ def get_deadlines(include_submitted=True, within_days=None):
         upcoming_assignments = [a for a in upcoming_assignments if a['due_at'] and (a['due_at'] - now).days < within_days]
 
     for assignment in sorted(upcoming_assignments, key=lambda a: (a['due_at'] is None, a['due_at'])):
-        aname = assignment['name']
+        course_code = courses[assignment['course_id']].course_code
         deadline = {
             'course_name': courses[assignment['course_id']].name,
-            'course_code': courses[assignment['course_id']].course_code,
+            'course_code': course_code,
+            'course_nickname': settings['course_names'][course_code],
             'assignment_name': assignment['name'],
             'due_at': date_helper.fmt_pst(assignment['due_at']),
             'due_in': get_deadline(now, assignment['due_at']),
