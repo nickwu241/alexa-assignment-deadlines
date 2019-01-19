@@ -2,6 +2,8 @@
 
 An Alexa skill to tell you your assignment deadlines, just say "open assignment deadlines".
 
+<img src="splashscreen.jpg" alt="Splash Screen">
+
 There is also a web application that can display the deadlines and configure the Alexa skill. For example, you can
 - Add a nickname for your obscure course names: e.g. "Relational Databases" for "CPSC 304 101/102".
 - Limit the timeline of due dates to annouce: e.g. "within 3 days" or "within 20 days".
@@ -20,4 +22,4 @@ Sample of how Alexa speaks in SSML (Speech Synthesis Markup Language):
 ```
 
 Web Application to configure settings:
-<img src="demo-shot.png" alt="Web Application Image">
+<img src="websettings.png" alt="Web Application Settings">
